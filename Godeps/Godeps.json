@@ -1,0 +1,76 @@
+{
+	"ImportPath": "github.com/fltmtoda/golibs-mqtt-postgres",
+	"GoVersion": "go1.4.2",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/go-uuid/uuid",
+			"Comment": "null-15",
+			"Rev": "35bc42037350f0078e3c974c6ea690f1926603ab"
+		},
+		{
+			"ImportPath": "code.google.com/p/go.net/websocket",
+			"Comment": "null-240",
+			"Rev": "937a34c9de13c766c814510f76bca091dee06028"
+		},
+		{
+			"ImportPath": "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git",
+			"Comment": "v0.9.1-8-g1d65364",
+			"Rev": "1d6536402dac4b2528bc23f08ecc318c295c320a"
+		},
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.7.3-4-gaaf92c9",
+			"Rev": "aaf92c95712104318fc35409745f1533aa5ff327"
+		},
+		{
+			"ImportPath": "github.com/fltmtoda/golibs/db",
+			"Rev": "af4c40c62802081e75cf3382c9667aab3d5fe80c"
+		},
+		{
+			"ImportPath": "github.com/fltmtoda/golibs/logger",
+			"Rev": "af4c40c62802081e75cf3382c9667aab3d5fe80c"
+		},
+		{
+			"ImportPath": "github.com/fltmtoda/golibs/mqtt",
+			"Rev": "af4c40c62802081e75cf3382c9667aab3d5fe80c"
+		},
+		{
+			"ImportPath": "github.com/fltmtoda/golibs/util",
+			"Rev": "af4c40c62802081e75cf3382c9667aab3d5fe80c"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/gorm",
+			"Rev": "2123f31d136e7db2ebfe9c384eb2e8b30f5c96ad"
+		},
+		{
+			"ImportPath": "github.com/jmoiron/sqlx",
+			"Comment": "sqlx-v1.0-67-g69738bd",
+			"Rev": "69738bd209812c5a381786011aff17944a384554"
+		},
+		{
+			"ImportPath": "github.com/lib/pq",
+			"Comment": "go1.0-cutoff-31-ga33d605",
+			"Rev": "a33d6053e025943d5dc89dfa1f35fe5500618df7"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-colorable",
+			"Rev": "d67e0b7d1797975196499f79bcc322c08b9f218b"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-isatty",
+			"Rev": "ae0b1f8f8004be68d791a576e3d8e7648ab41449"
+		},
+		{
+			"ImportPath": "github.com/tylerb/graceful",
+			"Comment": "v1.1",
+			"Rev": "ff79a7f00848198d26054b472aafb1043c4b3507"
+		},
+		{
+			"ImportPath": "golang.org/x/net/netutil",
+			"Rev": "84ba27dd5b2d8135e9da1395277f2c9333a2ffda"
+		}
+	]
+}
