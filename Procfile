@@ -1,0 +1,1 @@
+web: golibs-mqtt-postgres
