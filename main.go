@@ -21,7 +21,7 @@ func main() {
 	client := mqtt.Create(
 		&mqtt.Setting{
 			ClientId: fmt.Sprintf("mqtt-%v", time.Now().Unix()),
-			URL:      os.Getenv("CLOUDMQTT_URL"),
+			URL:      os.Getenv("MQTT_BROKER_URL"),
 		},
 	)
 	if err := client.Connect(); err != nil {

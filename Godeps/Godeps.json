@@ -60,10 +60,6 @@
 			"Rev": "d67e0b7d1797975196499f79bcc322c08b9f218b"
 		},
 		{
-			"ImportPath": "github.com/mattn/go-isatty",
-			"Rev": "ae0b1f8f8004be68d791a576e3d8e7648ab41449"
-		},
-		{
 			"ImportPath": "github.com/tylerb/graceful",
 			"Comment": "v1.1",
 			"Rev": "ff79a7f00848198d26054b472aafb1043c4b3507"

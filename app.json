@@ -10,17 +10,10 @@
       "description": "heroku buildpack for Golang",
       "value": "https://github.com/kr/heroku-buildpack-go"
     },
-
-    "CLOUDMQTT_URL": {
+    "MQTT_BROKER_URL": {
       "description": "mqtt broker url.",
       "value": ""
     },
-
-    "LOG_LEVEL": {
-      "description": "log level.",
-      "value": "info"
-    },
-
     "TZ": {
       "description": "timezone.",
       "value": "Asia/Tokyo"
