@@ -9,6 +9,7 @@ import (
 	"github.com/tylerb/graceful"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -30,11 +31,13 @@ func main() {
 	}
 
 	// Setup db
+	maxIdleConns, _ := strconv.Atoi(os.Getenv("DATABASE_MAX_IDLE_CONNS"))
+	maxOpenConns, _ := strconv.Atoi(os.Getenv("DATABASE_MAX_OPEN_CONNS"))
 	dbm, err := db.Create(
 		&db.Setting{
 			Url:          os.Getenv("DATABASE_URL"),
-			MaxIdleConns: 3,
-			MaxOpenConns: 10,
+			MaxIdleConns: maxIdleConns,
+			MaxOpenConns: maxOpenConns,
 		},
 	)
 	if err != nil {
@@ -58,7 +61,7 @@ func main() {
 		},
 	)
 	server := &graceful.Server{
-		Timeout: 10 * time.Second,
+		Timeout: 30 * time.Second,
 		Server: &http.Server{
 			Addr:    ":" + os.Getenv("PORT"),
 			Handler: nil,
@@ -72,7 +75,7 @@ func main() {
 			log.Error("Faild to subscriber")
 		}
 		if client != nil {
-			client.Disconnect(100)
+			client.Disconnect(10)
 			if dbm != nil {
 				client = nil
 			}
@@ -86,54 +89,56 @@ func main() {
 		log.Info("Stop http server")
 	}()
 
+	batchInsertCount, _ := strconv.Atoi(os.Getenv("PG_MAX_BATCH_INSERT_COUNT"))
+	if batchInsertCount == 0 {
+		batchInsertCount = 1
+	}
 	insertSQL := "INSERT INTO mqtt_log(message,created_at,updated_at)VALUES($1,$2,$3)"
-	go func() {
-		msgs := make([]string, 0, 10)
-		for {
-			if !alive {
-				exit_server <- 0
-				break
-			}
-			err := client.Subscribe(
-				"test/#",
-				mqtt.QOS_ZERO,
-				func(msg mqtt.Message) error {
-					msgs = append(msgs, string(msg.Payload()))
-					return nil
-				},
-			)
-			if err != nil {
-				log.Error(err)
-				break
-			}
-			if len(msgs) > 0 {
-				go func(messages []string) {
-					now := time.Now()
-					err = dbm.TxRunnable(
-						func(txn db.Transaction) error {
-							for _, msg := range messages {
-								log.Infof("Recieved message: %v", msg)
-								err := dbm.Exec(
-									insertSQL,
-									msg,
-									now,
-									now,
-								)
-								if err != nil {
-									return err
-								}
-							}
-							return nil
-						},
-					)
-					if err != nil {
-						log.Error(err)
-					}
-				}(msgs)
-				msgs = msgs[0:0]
-			}
+	msgs := make([]string, 0, batchInsertCount)
+	for {
+		if !alive {
+			exit_server <- 0
+			break
 		}
-	}()
+		err := client.Subscribe(
+			"test/#",
+			mqtt.QOS_ZERO,
+			func(msg mqtt.Message) error {
+				msgs = append(msgs, string(msg.Payload()))
+				return nil
+			},
+		)
+		if err != nil {
+			log.Error(err)
+			break
+		}
+		if batchInsertCount <= len(msgs) {
+			go func(messages []string) {
+				now := time.Now()
+				err = dbm.TxRunnable(
+					func(txn db.Transaction) error {
+						for _, msg := range messages {
+							log.Infof("Recieved message: %v", msg)
+							err := txn.Exec(
+								insertSQL,
+								msg,
+								now,
+								now,
+							)
+							if err != nil {
+								return err
+							}
+						}
+						return nil
+					},
+				)
+				if err != nil {
+					log.Error(err)
+				}
+			}(msgs)
+			msgs = msgs[0:0]
+		}
+	}
 	code := <-exit_process
 	log.Info("Shutdown main process")
 	os.Exit(code)
