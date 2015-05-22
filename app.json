@@ -3,7 +3,7 @@
   "repository": "https://github.com/fltmtoda/golibs-mqtt-postgres",
   "keywords": ["Heroku", "Golang", "IoT", "MQTT"],
   "addons": [
-    "heroku-postgresql:hobby"
+    "heroku-postgresql:hobby-dev"
   ],
   "env": {
     "BUILDPACK_URL": {
@@ -13,6 +13,10 @@
     "MQTT_BROKER_URL": {
       "description": "mqtt broker url.",
       "value": ""
+    },
+    "LOG_LEVEL": {
+      "description": "log level.",
+      "value": "info"
     },
     "TZ": {
       "description": "timezone.",
