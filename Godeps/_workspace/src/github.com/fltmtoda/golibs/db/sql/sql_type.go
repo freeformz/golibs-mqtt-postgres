@@ -2,14 +2,14 @@ package sql
 
 import (
 	"database/sql/driver"
-	"github.com/fltmtoda/golibs/logger"
-	"github.com/fltmtoda/golibs/util"
 	"strings"
 	"time"
+
+	"github.com/fltmtoda/golibs/log"
+	"github.com/fltmtoda/golibs/util"
 )
 
 var (
-	log       = logger.GetLogger()
 	emptyTime = TimestampType{}.val
 )
 
@@ -292,7 +292,11 @@ func (t *TimestampType) UnmarshalJSON(data []byte) error {
 	sVal = strings.Replace(sVal, "\"", "", -1)
 	sVal = strings.Replace(sVal, "+", " ", -1)
 	if sVal != "" {
-		t.Set(sVal)
+		if strings.Contains(sVal, "-") {
+			t.Set(sVal)
+		} else {
+			t.Set(time.Unix(util.ToInt64(sVal), 0).Add(9 * time.Hour)) //TODO Long値で取得した場合,UTC=>JSTへの変換が必要
+		}
 	}
 	if log.IsDebugEnabled() {
 		log.Debugf("UnmarshalJSON TimestampType: %v => %v", sVal, t)

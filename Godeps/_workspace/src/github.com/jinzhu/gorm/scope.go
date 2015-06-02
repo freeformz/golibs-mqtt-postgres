@@ -158,13 +158,18 @@ func (scope *Scope) HasColumn(column string) bool {
 func (scope *Scope) SetColumn(column interface{}, value interface{}) error {
 	if field, ok := column.(*Field); ok {
 		return field.Set(value)
-	} else if dbName, ok := column.(string); ok {
+	} else if name, ok := column.(string); ok {
+
+		if field, ok := scope.Fields()[name]; ok {
+			return field.Set(value)
+		}
+
+		dbName := ToDBName(name)
 		if field, ok := scope.Fields()[dbName]; ok {
 			return field.Set(value)
 		}
 
-		dbName = ToDBName(dbName)
-		if field, ok := scope.Fields()[dbName]; ok {
+		if field, ok := scope.FieldByName(name); ok {
 			return field.Set(value)
 		}
 	}
@@ -172,7 +177,7 @@ func (scope *Scope) SetColumn(column interface{}, value interface{}) error {
 }
 
 func (scope *Scope) CallMethod(name string, checkError bool) {
-	if scope.Value == nil && (!checkError || !scope.HasError()) {
+	if scope.Value == nil || (checkError && scope.HasError()) {
 		return
 	}
 
@@ -224,16 +229,41 @@ func (scope *Scope) AddToVars(value interface{}) string {
 	}
 }
 
+type tabler interface {
+	TableName() string
+}
+
+type dbTabler interface {
+	TableName(*DB) string
+}
+
 // TableName get table name
 func (scope *Scope) TableName() string {
 	if scope.Search != nil && len(scope.Search.tableName) > 0 {
 		return scope.Search.tableName
 	}
-	return scope.GetModelStruct().TableName
+
+	if tabler, ok := scope.Value.(tabler); ok {
+		return tabler.TableName()
+	}
+
+	if tabler, ok := scope.Value.(dbTabler); ok {
+		return tabler.TableName(scope.db)
+	}
+
+	if scope.GetModelStruct().TableName != nil {
+		return scope.GetModelStruct().TableName(scope.db)
+	}
+
+	scope.Err(errors.New("wrong table name"))
+	return ""
 }
 
 func (scope *Scope) QuotedTableName() (name string) {
 	if scope.Search != nil && len(scope.Search.tableName) > 0 {
+		if strings.Index(scope.Search.tableName, " ") != -1 {
+			return scope.Search.tableName
+		}
 		return scope.Quote(scope.Search.tableName)
 	} else {
 		return scope.Quote(scope.TableName())
@@ -341,6 +371,8 @@ func (scope *Scope) SelectAttrs() []string {
 		for _, value := range scope.Search.selects {
 			if str, ok := value.(string); ok {
 				attrs = append(attrs, str)
+			} else if strs, ok := value.([]string); ok {
+				attrs = append(attrs, strs...)
 			} else if strs, ok := value.([]interface{}); ok {
 				for _, str := range strs {
 					attrs = append(attrs, fmt.Sprintf("%v", str))

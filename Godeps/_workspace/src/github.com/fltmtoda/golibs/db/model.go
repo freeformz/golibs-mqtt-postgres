@@ -2,7 +2,6 @@ package db
 
 import (
 	"time"
-	//	"github.com/fltmtoda/golibs/db/sql"
 )
 
 type (

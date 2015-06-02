@@ -38,7 +38,7 @@ func (scope *Scope) buildWhereCondition(clause map[string]interface{}) (str stri
 	case interface{}:
 		var sqls []string
 		for _, field := range scope.New(value).Fields() {
-			if !field.IsBlank {
+			if !field.IsIgnored && !field.IsBlank {
 				sqls = append(sqls, fmt.Sprintf("(%v = %v)", scope.Quote(field.DBName), scope.AddToVars(field.Field.Interface())))
 			}
 		}
@@ -336,12 +336,14 @@ func (scope *Scope) updatedAttrsWithValues(values map[string]interface{}, ignore
 
 func (scope *Scope) row() *sql.Row {
 	defer scope.Trace(NowFunc())
+	scope.callCallbacks(scope.db.parent.callback.rowQueries)
 	scope.prepareQuerySql()
 	return scope.SqlDB().QueryRow(scope.Sql, scope.SqlVars...)
 }
 
 func (scope *Scope) rows() (*sql.Rows, error) {
 	defer scope.Trace(NowFunc())
+	scope.callCallbacks(scope.db.parent.callback.rowQueries)
 	scope.prepareQuerySql()
 	return scope.SqlDB().Query(scope.Sql, scope.SqlVars...)
 }
@@ -445,13 +447,19 @@ func (scope *Scope) createJoinTable(field *StructField) {
 		joinTableHandler := relationship.JoinTableHandler
 		joinTable := joinTableHandler.Table(scope.db)
 		if !scope.Dialect().HasTable(scope, joinTable) {
-			primaryKeySqlType := scope.Dialect().SqlTag(scope.PrimaryField().Field, 255, false)
-			scope.Err(scope.NewDB().Exec(fmt.Sprintf("CREATE TABLE %v (%v)",
-				scope.Quote(joinTable),
-				strings.Join([]string{
-					scope.Quote(relationship.ForeignDBName) + " " + primaryKeySqlType,
-					scope.Quote(relationship.AssociationForeignDBName) + " " + primaryKeySqlType}, ",")),
-			).Error)
+			toScope := &Scope{Value: reflect.New(field.Struct.Type).Interface()}
+
+			var sqlTypes []string
+			for _, s := range []*Scope{scope, toScope} {
+				for _, primaryField := range s.GetModelStruct().PrimaryFields {
+					value := reflect.Indirect(reflect.New(primaryField.Struct.Type))
+					primaryKeySqlType := scope.Dialect().SqlTag(value, 255, false)
+					dbName := ToDBName(s.GetModelStruct().ModelType.Name() + primaryField.Name)
+					sqlTypes = append(sqlTypes, scope.Quote(dbName)+" "+primaryKeySqlType)
+				}
+			}
+
+			scope.Err(scope.NewDB().Exec(fmt.Sprintf("CREATE TABLE %v (%v)", scope.Quote(joinTable), strings.Join(sqlTypes, ","))).Error)
 		}
 		scope.NewDB().Table(joinTable).AutoMigrate(joinTableHandler)
 	}

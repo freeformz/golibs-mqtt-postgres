@@ -2,150 +2,103 @@ package main
 
 import (
 	"fmt"
-	"github.com/fltmtoda/golibs/db"
-	"github.com/fltmtoda/golibs/db/sql"
-	"github.com/fltmtoda/golibs/logger"
-	"github.com/fltmtoda/golibs/mqtt"
-	"github.com/tylerb/graceful"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
+
+	"github.com/fltmtoda/golibs/db"
+	"github.com/fltmtoda/golibs/db/sql"
+	"github.com/fltmtoda/golibs/env"
+	"github.com/fltmtoda/golibs/log"
+	"github.com/fltmtoda/golibs/mqtt"
+	"github.com/fltmtoda/golibs/mqtt/bridge_db"
+
+	"github.com/ant0ine/go-json-rest/rest"
+	"github.com/stretchr/graceful"
 )
 
-var log = logger.GetLogger()
+var (
+	OK = map[string]bool{
+		"ok":           true,
+		"acknowledged": true,
+	}
+)
 
 func main() {
-	log.Info("Startup main process")
+	initSchema()
 
-	// Setup mqtt client
-	client := mqtt.Create(
-		&mqtt.Setting{
-			ClientId: fmt.Sprintf("mqtt-%v", time.Now().Unix()),
-			URL:      os.Getenv("MQTT_BROKER_URL"),
+	setting := &bdb.Setting{
+		Topic:       env.GetEnv("MQTT_TOPIC", "test/#").String(),
+		Concurrency: int(env.GetEnv("MQTT_CONCURRENCY", "10").Int64()),
+		DB: &db.Setting{
+			URL:          os.Getenv("DATABASE_URL"),
+			MaxIdleConns: int(env.GetEnv("DATABASE_MAX_IDLE_CONNS", "10").Int64()),
+			MaxOpenConns: int(env.GetEnv("DATABASE_MAX_OPEN_CONNS", "10").Int64()),
+		},
+		MQTT: &mqtt.Setting{
+			ClientId: fmt.Sprintf("Bridge-DB-%v", time.Now().Unix()),
+			URL:      env.GetEnv("MQTT_BROKER_URL", "tcp://localhost:1883").String(),
+		},
+	}
+	bridgeDB, err := bdb.Create(setting)
+	if err != nil {
+		panic(err)
+	}
+	go bridgeDB.Start(
+		func(topic string) interface{} {
+			return &RawData{}
 		},
 	)
-	if err := client.Connect(); err != nil {
-		log.Error(err)
-		return
-	}
 
-	// Setup db
-	maxIdleConns, _ := strconv.Atoi(os.Getenv("DATABASE_MAX_IDLE_CONNS"))
-	maxOpenConns, _ := strconv.Atoi(os.Getenv("DATABASE_MAX_OPEN_CONNS"))
-	dbm, err := db.Create(
-		&db.Setting{
-			Url:          os.Getenv("DATABASE_URL"),
-			MaxIdleConns: maxIdleConns,
-			MaxOpenConns: maxOpenConns,
+	api := rest.NewApi()
+	api.Use(rest.DefaultCommonStack...)
+	router, err := rest.MakeRouter(
+		&rest.Route{
+			HttpMethod: "GET",
+			PathExp:    "/",
+			Func: func(w rest.ResponseWriter, r *rest.Request) {
+				w.WriteJson(OK)
+			},
 		},
 	)
 	if err != nil {
-		log.Error(err)
-		return
+		panic(err)
 	}
+	api.SetApp(router)
 
-	// Setup db schema
-	dbm.DropTableWithCascade(&MqttLog{})
-	dbm.AutoMigrate(&MqttLog{})
-
-	alive := true
-	exit_server := make(chan int)
-	exit_process := make(chan int)
-
-	log.Info("Start http server...")
-	http.HandleFunc(
-		"/",
-		func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("ok"))
-		},
-	)
 	server := &graceful.Server{
-		Timeout: 30 * time.Second,
 		Server: &http.Server{
-			Addr:    ":" + os.Getenv("PORT"),
-			Handler: nil,
+			Addr:    ":" + env.GetEnv("PORT", "9000").String(),
+			Handler: api.MakeHandler(),
+		},
+		Timeout:          10 * time.Second,
+		NoSignalHandling: false,
+		ShutdownInitiated: func() {
+			log.Info("Call ShutdownInitiated")
+			bridgeDB.Stop()
 		},
 	}
-	server.ShutdownInitiated = func() {
-		log.Info("Call ShutdownInitialated.")
-		alive = false
-		code := <-exit_server
-		if code != 0 {
-			log.Error("Faild to subscriber")
-		}
-		if client != nil {
-			client.Disconnect(10)
-			if dbm != nil {
-				client = nil
-			}
-			dbm.CloseDB()
-			dbm = nil
-		}
-		exit_process <- 0
-	}
-	go func() {
-		server.ListenAndServe()
-		log.Info("Stop http server")
-	}()
-
-	batchInsertCount, _ := strconv.Atoi(os.Getenv("PG_MAX_BATCH_INSERT_COUNT"))
-	if batchInsertCount == 0 {
-		batchInsertCount = 1
-	}
-	insertSQL := "INSERT INTO mqtt_log(message,created_at,updated_at)VALUES($1,$2,$3)"
-	msgs := make([]string, 0, batchInsertCount)
-	for {
-		if !alive {
-			exit_server <- 0
-			break
-		}
-		err := client.Subscribe(
-			"test/#",
-			mqtt.QOS_ZERO,
-			func(msg mqtt.Message) error {
-				msgs = append(msgs, string(msg.Payload()))
-				return nil
-			},
-		)
-		if err != nil {
-			log.Error(err)
-			break
-		}
-		if batchInsertCount <= len(msgs) {
-			go func(messages []string) {
-				now := time.Now()
-				err = dbm.TxRunnable(
-					func(txn db.Transaction) error {
-						for _, msg := range messages {
-							log.Infof("Recieved message: %v", msg)
-							err := txn.Exec(
-								insertSQL,
-								msg,
-								now,
-								now,
-							)
-							if err != nil {
-								return err
-							}
-						}
-						return nil
-					},
-				)
-				if err != nil {
-					log.Error(err)
-				}
-			}(msgs)
-			msgs = msgs[0:0]
-		}
-	}
-	code := <-exit_process
-	log.Info("Shutdown main process")
-	os.Exit(code)
+	server.ListenAndServe()
 }
 
-type MqttLog struct {
+func initSchema() {
+	dbm, err := db.Create(
+		&db.Setting{
+			URL: os.Getenv("DATABASE_URL"),
+		},
+	)
+	if err != nil {
+		panic(err)
+	}
+	defer dbm.CloseDB()
+	dbm.DropTableWithCascade(&RawData{})
+	dbm.AutoMigrate(&RawData{})
+}
+
+type RawData struct {
 	db.PK
-	Message sql.StringType `json:"msg" sql:"type:json"`
+	DeviceId  sql.StringType    `json:"device_id"  sql:"not null"`
+	Body      sql.StringType    `json:"body"       sql:"not null;type:json"`
+	Timestamp sql.TimestampType `json:"created_at" sql:"type:timestamp without time zone"`
 	db.Timestamps
 }

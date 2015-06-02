@@ -22,51 +22,60 @@
 		},
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.7.3-4-gaaf92c9",
-			"Rev": "aaf92c95712104318fc35409745f1533aa5ff327"
+			"Comment": "v0.7.3-8-g52919f1",
+			"Rev": "52919f182f9c314f8a38c5afe96506f73d02b4b2"
+		},
+		{
+			"ImportPath": "github.com/ant0ine/go-json-rest/rest",
+			"Comment": "v3.2.0-5-g6eac5ab",
+			"Rev": "6eac5ab9fc475f517022602fd417c921403c0a28"
 		},
 		{
 			"ImportPath": "github.com/fltmtoda/golibs/db",
-			"Rev": "af4c40c62802081e75cf3382c9667aab3d5fe80c"
+			"Rev": "0e19772862a6b170e341bc2080141d26b53e3340"
 		},
 		{
-			"ImportPath": "github.com/fltmtoda/golibs/logger",
-			"Rev": "af4c40c62802081e75cf3382c9667aab3d5fe80c"
+			"ImportPath": "github.com/fltmtoda/golibs/env",
+			"Rev": "0e19772862a6b170e341bc2080141d26b53e3340"
+		},
+		{
+			"ImportPath": "github.com/fltmtoda/golibs/log",
+			"Rev": "0e19772862a6b170e341bc2080141d26b53e3340"
 		},
 		{
 			"ImportPath": "github.com/fltmtoda/golibs/mqtt",
-			"Rev": "af4c40c62802081e75cf3382c9667aab3d5fe80c"
+			"Rev": "0e19772862a6b170e341bc2080141d26b53e3340"
 		},
 		{
 			"ImportPath": "github.com/fltmtoda/golibs/util",
-			"Rev": "af4c40c62802081e75cf3382c9667aab3d5fe80c"
+			"Rev": "0e19772862a6b170e341bc2080141d26b53e3340"
 		},
 		{
 			"ImportPath": "github.com/jinzhu/gorm",
-			"Rev": "2123f31d136e7db2ebfe9c384eb2e8b30f5c96ad"
+			"Rev": "dc55c59b842d79778fec9929bd84c9dbf52b4fbc"
 		},
 		{
 			"ImportPath": "github.com/jmoiron/sqlx",
-			"Comment": "sqlx-v1.0-67-g69738bd",
-			"Rev": "69738bd209812c5a381786011aff17944a384554"
+			"Comment": "sqlx-v1.1-15-g23a7b78",
+			"Rev": "23a7b787ffc1205098c38f534c4bf3764ae7b713"
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
-			"Comment": "go1.0-cutoff-31-ga33d605",
-			"Rev": "a33d6053e025943d5dc89dfa1f35fe5500618df7"
+			"Comment": "go1.0-cutoff-47-g93e9980",
+			"Rev": "93e9980741c9e593411b94e07d5bad8cfb4809db"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-colorable",
 			"Rev": "d67e0b7d1797975196499f79bcc322c08b9f218b"
 		},
 		{
-			"ImportPath": "github.com/tylerb/graceful",
+			"ImportPath": "github.com/stretchr/graceful",
 			"Comment": "v1.1",
 			"Rev": "ff79a7f00848198d26054b472aafb1043c4b3507"
 		},
 		{
 			"ImportPath": "golang.org/x/net/netutil",
-			"Rev": "84ba27dd5b2d8135e9da1395277f2c9333a2ffda"
+			"Rev": "7212a0803472eb1ec2686896a7c626528172a7a6"
 		}
 	]
 }

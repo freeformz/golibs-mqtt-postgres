@@ -1,8 +1,9 @@
-package logger
+package log
 
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/Sirupsen/logrus"
 )
 

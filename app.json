@@ -17,15 +17,19 @@
 
     "DATABASE_MAX_IDLE_CONNS": {
       "description": "database max idle connections.",
-      "value": "1"
+      "value": "10"
     },
     "DATABASE_MAX_OPEN_CONNS": {
       "description": "database max open connections.",
       "value": "10"
     },
 
-    "PG_MAX_BATCH_INSERT_COUNT": {
-      "description": "postgres max batch insert count.",
+    "MQTT_TOPIC": {
+      "description": "mqtt subscriber topic.",
+      "value": "test/#"
+    },
+    "MQTT_CONCURRENCY": {
+      "description": "mqtt subscriber concurrency process.",
       "value": "10"
     },
 

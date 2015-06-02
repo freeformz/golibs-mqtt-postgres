@@ -1,13 +1,5 @@
 package db
 
-import (
-	"github.com/fltmtoda/golibs/logger"
-)
-
-var (
-	log = logger.GetLogger()
-)
-
 type (
 	DB interface {
 		Create(value interface{}) error

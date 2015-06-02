@@ -2,6 +2,8 @@ package db
 
 import (
 	"fmt"
+
+	"github.com/fltmtoda/golibs/log"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -18,25 +20,16 @@ type sqlxTxn struct {
 func createSqlx(setting *Setting) (DB, error) {
 	db, err := sqlx.Connect(
 		setting.Dialect(),
-		setting.Url,
+		setting.URL,
 	)
 	if err != nil {
 		return nil, err
 	}
 	log.Info("Open Database !")
-
-	/*
-		db.SingularTable(true)
-		if log.IsDebugEnabled() {
-			db.LogMode(true)
-		}
-		db.DB()
-	*/
-	if setting.IsDefaultSetting() {
-		db.DB.SetMaxIdleConns(5)
-		db.DB.SetMaxOpenConns(10)
-	} else {
+	if setting.MaxIdleConns > 0 {
 		db.DB.SetMaxIdleConns(setting.MaxIdleConns)
+	}
+	if setting.MaxOpenConns > 0 {
 		db.DB.SetMaxOpenConns(setting.MaxOpenConns)
 	}
 	return &sqlxDB{

@@ -5,7 +5,7 @@ import (
 )
 
 type Setting struct {
-	Url          string
+	URL          string
 	MaxIdleConns int
 	MaxOpenConns int
 }
@@ -13,13 +13,9 @@ type Setting struct {
 /**************************
  Setting function
 **************************/
-func (s *Setting) IsDefaultSetting() bool {
-	return s.MaxIdleConns == 0 && s.MaxOpenConns == 0
-}
-
 func (s *Setting) Dialect() string {
-	if strings.HasPrefix(s.Url, "postgres") {
+	if strings.HasPrefix(s.URL, "postgres") {
 		return "postgres"
 	}
-	return "none dialect"
+	return ""
 }

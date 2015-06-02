@@ -1,9 +1,10 @@
-package logger
+package log
 
 import (
+	"testing"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var (

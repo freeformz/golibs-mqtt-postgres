@@ -2,6 +2,8 @@ package db
 
 import (
 	"fmt"
+
+	"github.com/fltmtoda/golibs/log"
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
 )
@@ -17,7 +19,7 @@ type gormTxn struct {
 func createGorm(setting *Setting) (DB, error) {
 	db, err := gorm.Open(
 		setting.Dialect(),
-		setting.Url,
+		setting.URL,
 	)
 	if err != nil {
 		return nil, err
@@ -29,11 +31,10 @@ func createGorm(setting *Setting) (DB, error) {
 		db.LogMode(true)
 	}
 	db.DB()
-	if setting.IsDefaultSetting() {
-		db.DB().SetMaxIdleConns(5)
-		db.DB().SetMaxOpenConns(10)
-	} else {
+	if setting.MaxIdleConns > 0 {
 		db.DB().SetMaxIdleConns(setting.MaxIdleConns)
+	}
+	if setting.MaxOpenConns > 0 {
 		db.DB().SetMaxOpenConns(setting.MaxOpenConns)
 	}
 	return &gormDB{

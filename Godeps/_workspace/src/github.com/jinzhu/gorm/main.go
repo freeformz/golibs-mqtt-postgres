@@ -211,6 +211,10 @@ func (s *DB) Find(out interface{}, where ...interface{}) *DB {
 	return s.clone().NewScope(out).inlineCondition(where...).callCallbacks(s.parent.callback.queries).db
 }
 
+func (s *DB) Scan(dest interface{}) *DB {
+	return s.clone().NewScope(s.Value).InstanceSet("gorm:query_destination", dest).callCallbacks(s.parent.callback.queries).db
+}
+
 func (s *DB) Row() *sql.Row {
 	return s.NewScope(s.Value).row()
 }
@@ -219,10 +223,16 @@ func (s *DB) Rows() (*sql.Rows, error) {
 	return s.NewScope(s.Value).rows()
 }
 
-func (s *DB) Scan(dest interface{}) *DB {
-	scope := s.clone().NewScope(s.Value).InstanceSet("gorm:query_destination", dest)
-	Query(scope)
-	return scope.db
+func (s *DB) Pluck(column string, value interface{}) *DB {
+	return s.NewScope(s.Value).pluck(column, value).db
+}
+
+func (s *DB) Count(value interface{}) *DB {
+	return s.NewScope(s.Value).count(value).db
+}
+
+func (s *DB) Related(value interface{}, foreignKeys ...string) *DB {
+	return s.clone().NewScope(s.Value).related(value, foreignKeys...).db
 }
 
 func (s *DB) FirstOrInit(out interface{}, where ...interface{}) *DB {
@@ -307,18 +317,6 @@ func (s *DB) Model(value interface{}) *DB {
 	c := s.clone()
 	c.Value = value
 	return c
-}
-
-func (s *DB) Related(value interface{}, foreignKeys ...string) *DB {
-	return s.clone().NewScope(s.Value).related(value, foreignKeys...).db
-}
-
-func (s *DB) Pluck(column string, value interface{}) *DB {
-	return s.NewScope(s.Value).pluck(column, value).db
-}
-
-func (s *DB) Count(value interface{}) *DB {
-	return s.NewScope(s.Value).count(value).db
 }
 
 func (s *DB) Table(name string) *DB {
@@ -486,4 +484,8 @@ func (s *DB) SetJoinTableHandler(source interface{}, column string, handler Join
 			}
 		}
 	}
+}
+
+func (s *DB) SetTableNameHandler(source interface{}, handler func(*DB) string) {
+	s.NewScope(source).GetModelStruct().TableName = handler
 }
