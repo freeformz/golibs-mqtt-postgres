@@ -6,10 +6,6 @@
     "heroku-postgresql:hobby-dev"
   ],
   "env": {
-    "BUILDPACK_URL": {
-      "description": "heroku buildpack for Golang",
-      "value": "https://github.com/kr/heroku-buildpack-go"
-    },
     "MQTT_BROKER_URL": {
       "description": "mqtt broker url.",
       "value": ""
